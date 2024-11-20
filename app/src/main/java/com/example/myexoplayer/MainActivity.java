@@ -1,5 +1,6 @@
 package com.example.myexoplayer;
 
+import android.content.ComponentName;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,8 +9,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.common.MediaItem;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.session.MediaController;
+import androidx.media3.session.SessionToken;
 
 import com.example.myexoplayer.databinding.ActivityMainBinding;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
@@ -35,6 +40,24 @@ public class MainActivity extends AppCompatActivity {
 
         // Call the method to hide system UI
         hideSystemUI();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Create a session token for the PlaybackService
+        SessionToken sessionToken = new SessionToken(this, new ComponentName(this, PlaybackService.class));
+
+        // Build the MediaController asynchronously and set the player
+        ListenableFuture<MediaController> controllerFuture = new MediaController.Builder(this, sessionToken).buildAsync();
+        controllerFuture.addListener(() -> {
+            try {
+                // Set the player on the player view
+                binding.playerView.setPlayer(controllerFuture.get());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, MoreExecutors.directExecutor());
     }
 
     private void hideSystemUI() {
